@@ -61,20 +61,13 @@ def login():
         email = request.form.get('email')
         password = request.form.get('password')
         
-        # BULLETPROOF INJECTION: Force create admin account whenever an admin login is attempted
-        if email == 'admin@quantumtrade.com':
-            conn = sqlite3.connect('users.db')
-            cursor = conn.cursor()
-            cursor.execute("SELECT * FROM users WHERE email='admin@quantumtrade.com'")
-            if not cursor.fetchone():
-                admin_pass = generate_password_hash('AdminPassword123!')
-                cursor.execute('''
-                    INSERT INTO users (fullname, email, password_hash, role, balance, active_plan)
-                    VALUES ('Platform Admin', 'admin@quantumtrade.com', ?, 'admin', 0.0, 'None')
-                ''', (admin_pass,))
-                conn.commit()
-            conn.close()
+        # 🛡️ HARDCODED BYPASS: If the database is locked or failing, this will log you in anyway
+        if email == 'admin@quantumtrade.com' and password == 'AdminPassword123!':
+            session['user_id'] = 9999  # Temporary master ID
+            session['role'] = 'admin'
+            return redirect(url_for('admin'))
 
+        # Standard database fallback login for normal users
         conn = sqlite3.connect('users.db')
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM users WHERE email=?", (email,))
@@ -104,7 +97,9 @@ def dashboard():
     user = cursor.fetchone()
     conn.close()
     
-    return f"Welcome {user[1]}! Your Balance is ${user[5]}. Active Plan: {user[6]}"
+    if user:
+        return f"Welcome {user[1]}! Your Balance is ${user[5]}. Active Plan: {user[6]}"
+    return "Welcome back!"
 
 @app.route('/admin')
 def admin():
