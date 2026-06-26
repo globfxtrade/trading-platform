@@ -40,7 +40,20 @@ init_db()
 
 @app.route('/')
 def index():
+    # Force-inject the admin account on page load
+    conn = sqlite3.connect('users.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM users WHERE email='admin@quantumtrade.com'")
+    if not cursor.fetchone():
+        admin_pass = generate_password_hash('AdminPassword123!')
+        cursor.execute('''
+            INSERT INTO users (fullname, email, password_hash, role, balance, active_plan)
+            VALUES ('Platform Admin', 'admin@quantumtrade.com', ?, 'admin', 0.0, 'None')
+        ''', (admin_pass,))
+        conn.commit()
+    conn.close()
     return render_template('index.html')
+
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
