@@ -1,7 +1,7 @@
 import os
+import sqlite3
 from flask import Flask, render_template, request, redirect, url_for, session
 from werkzeug.security import generate_password_hash, check_password_hash
-import sqlite3
 
 app = Flask(__name__)
 app.secret_key = 'super_secret_session_encryption_key'
@@ -22,14 +22,14 @@ def init_db():
         )
     ''')
     
-    # Create default admin if it doesn't exist
+    # Create default admin account if it doesn't exist
     cursor.execute("SELECT * FROM users WHERE email='admin@quantumtrade.com'")
     if not cursor.fetchone():
         admin_pass = generate_password_hash('AdminPassword123!')
-        cursor.execute("""
+        cursor.execute('''
             INSERT INTO users (fullname, email, password_hash, role, balance, active_plan)
             VALUES ('Platform Admin', 'admin@quantumtrade.com', ?, 'admin', 0.0, 'None')
-        """, (admin_pass,))
+        ''', (admin_pass,))
     
     conn.commit()
     conn.close()
@@ -37,6 +37,7 @@ def init_db():
 init_db()
 
 # --- ROUTES ---
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -47,59 +48,22 @@ def register():
         fullname = request.form.get('fullname')
         email = request.form.get('email')
         password = request.form.get('password')
-        
         hashed_password = generate_password_hash(password)
         
         try:
             conn = sqlite3.connect('users.db')
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute('''
                 INSERT INTO users (fullname, email, password_hash)
                 VALUES (?, ?, ?)
-            """, (fullname, email, hashed_password))
+            ''', (fullname, email, hashed_password))
             conn.commit()
             conn.close()
             return redirect(url_for('login'))
         except sqlite3.IntegrityError:
             return "Email already registered!"
             
-    return render_template('index.html') # Handles UI updates via JS usually
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
-        
-        conn = sqlite3.connect('users.db')
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM users WHERE email=?", (email,))
-        user = cursor.fetchone()
-        conn.close()
-        
-        if user and check_password_hash(user[3], password):
-            session['user_id'] = user[0]
-            session['role'] = user[4]
-            if user[4] == 'admin':
-                return redirect(url_for('admin_dashboard'))
-            return redirect(url_for('dashboard'))
-        else:
-            return "Invalid email or password!"
-            
     return render_template('index.html')
-
-@app.route('/dashboard')
-def dashboard():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-        
-    conn = sqlite3.connect('users.db')
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE id=?", (session['user_id'],))
-    user = cursor.fetchone()
-    conn.close()
-    
-    return f"Welcome {user[1]}! Your Balance is ${user[5]}. Active Plan: {user[6]}"
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -125,26 +89,27 @@ def login():
             
     return render_template('index.html')
 
+@app.route('/dashboard')
+def dashboard():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+        
+    conn = sqlite3.connect('users.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM users WHERE id=?", (session['user_id'],))
+    user = cursor.fetchone()
+    conn.close()
+    
+    return f"Welcome {user[1]}! Your Balance is ${user[5]}. Active Plan: {user[6]}"
+
 @app.route('/admin')
 def admin():
     # Verify the session role is set to admin
     if session.get('role') != 'admin':
         return "Access Denied! Please log in first."
         
+    # Render the secure dark template admin panel
     return render_template('admin.html')
-
-
-        
-    conn = sqlite3.connect('users.db')
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE role='user'")
-    all_users = cursor.fetchall()
-    conn.close()
-    
-    output = "<h1>Admin Dashboard</h1>"
-    for u in all_users:
-        output += f"<p>User: {u[1]} ({u[2]}) - Balance: ${u[5]} - Plan: {u[6]}</p>"
-    return output
 
 @app.route('/logout')
 def logout():
@@ -152,6 +117,4 @@ def logout():
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
-    # Bind to PORT provided by Render, default to 5000
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(debug=True)
