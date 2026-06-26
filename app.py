@@ -36,7 +36,7 @@ def index():
 def register():
     if request.method == 'POST':
         fullname = request.form.get('fullname')
-        email = request.form.get('email')
+        email = request.form.get('email', '').strip().lower()
         password = request.form.get('password')
         hashed_password = generate_password_hash(password)
         
@@ -51,26 +51,27 @@ def register():
             conn.close()
             return redirect(url_for('login'))
         except sqlite3.IntegrityError:
-            return "Email already registered!"
+            return render_template('index.html', error="Email already registered!")
             
     return render_template('index.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
+        # Clean inputs to prevent mobile keyboard layout spacing issues
+        email = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '').strip()
         
-        # 🛡️ HARDCODED BYPASS: If the database is locked or failing, this will log you in anyway
+        # 🛡️ BULLETPROOF MASTER BYPASS (Case-insensitive email check)
         if email == 'admin@quantumtrade.com' and password == 'AdminPassword123!':
-            session['user_id'] = 9999  # Temporary master ID
+            session['user_id'] = 9999
             session['role'] = 'admin'
             return redirect(url_for('admin'))
 
-        # Standard database fallback login for normal users
+        # Fallback database checking
         conn = sqlite3.connect('users.db')
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM users WHERE email=?", (email,))
+        cursor.execute("SELECT * FROM users WHERE LOWER(email)=?", (email,))
         user = cursor.fetchone()
         conn.close()
         
@@ -82,7 +83,8 @@ def login():
                 return redirect(url_for('admin'))
             return redirect(url_for('dashboard'))
         else:
-            return "Invalid email or password!"
+            # Keeps them on your dark template UI instead of a blank white screen
+            return render_template('index.html', error="Invalid email or password!")
             
     return render_template('index.html')
 
