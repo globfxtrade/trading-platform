@@ -101,10 +101,39 @@ def dashboard():
     
     return f"Welcome {user[1]}! Your Balance is ${user[5]}. Active Plan: {user[6]}"
 
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        email = request.form.get('email')
+        password = request.form.get('password')
+        
+        conn = sqlite3.connect('users.db')
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM users WHERE email=?", (email,))
+        user = cursor.fetchone()
+        conn.close()
+        
+        if user and check_password_hash(user[3], password):
+            session['user_id'] = user[0]
+            session['role'] = user[4]
+            
+            if user[4] == 'admin':
+                return redirect(url_for('admin'))
+            return redirect(url_for('dashboard'))
+        else:
+            return "Invalid email or password!"
+            
+    return render_template('index.html')
+
 @app.route('/admin')
-def admin_dashboard():
-    if 'user_id' not in session or session.get('role') != 'admin':
-        return "Access Denied!"
+def admin():
+    # Verify the session role is set to admin
+    if session.get('role') != 'admin':
+        return "Access Denied! Please log in first."
+        
+    return render_template('admin.html')
+
+
         
     conn = sqlite3.connect('users.db')
     cursor = conn.cursor()
