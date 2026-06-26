@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Trade | Admin Control Panel</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { background: #0b111e; color: #ffffff; padding: 15px; }
+        header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px; border-bottom: 1px solid #22314d; margin-bottom: 20px; }
+        h1 { font-size: 20px; color: #3b82f6; }
+        .logout-btn { background: #ef4444; border: none; padding: 8px 16px; color: white; border-radius: 6px; font-weight: 600; cursor: pointer; text-decoration: none; font-size: 14px;}
+        .card { background: #151f32; border: 1px solid #22314d; padding: 15px; border-radius: 10px; margin-bottom: 20px; }
+        .card h2 { font-size: 16px; margin-bottom: 10px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat { font-size: 28px; font-weight: bold; color: #10b981; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: #0b111e; border-radius: 8px; overflow: hidden; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #22314d; font-size: 14px; }
+        th { background: #1e293b; color: #94a3b8; font-weight: 600; }
+        tr:hover { background: #151f32; }
+        .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; background: #3b82f6; color: white; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div>
+            <h1>Master Panel</h1>
+            <p style="font-size: 12px; color: #94a3b8;">Quantum Engine Status: Active</p>
+        </div>
+        <a href="/" class="logout-btn">Log Out</a>
+    </header>
+
+    <div class="card">
+        <h2>Platform Statistics</h2>
+        <div class="stat">$45,280.00</div>
+        <p style="font-size: 13px; color: #94a3b8; margin-top: 4px;">Total Live Managed Assets</p>
+    </div>
+
+    <div class="card">
+        <h2>Registered Accounts</h2>
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>User Account</th>
+                        <th>Status</th>
+                        <th>Balance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>demo-user@quantum.com</td>
+                        <td><span class="badge">Verified</span></td>
+                        <td style="color: #10b981; font-weight: 600;">$5,200.00</td>
+                    </tr>
+                    <tr>
+                        <td>test-trader@gmail.com</td>
+                        <td><span class="badge">Verified</span></td>
+                        <td style="color: #10b981; font-weight: 600;">$150.00</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</body>
+</html>
