@@ -21,16 +21,6 @@ def init_db():
             active_plan TEXT DEFAULT 'None'
         )
     ''')
-    
-    # Create default admin account if it doesn't exist
-    cursor.execute("SELECT * FROM users WHERE email='admin@quantumtrade.com'")
-    if not cursor.fetchone():
-        admin_pass = generate_password_hash('AdminPassword123!')
-        cursor.execute('''
-            INSERT INTO users (fullname, email, password_hash, role, balance, active_plan)
-            VALUES ('Platform Admin', 'admin@quantumtrade.com', ?, 'admin', 0.0, 'None')
-        ''', (admin_pass,))
-    
     conn.commit()
     conn.close()
 
@@ -40,20 +30,7 @@ init_db()
 
 @app.route('/')
 def index():
-    # Force-inject the admin account on page load
-    conn = sqlite3.connect('users.db')
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE email='admin@quantumtrade.com'")
-    if not cursor.fetchone():
-        admin_pass = generate_password_hash('AdminPassword123!')
-        cursor.execute('''
-            INSERT INTO users (fullname, email, password_hash, role, balance, active_plan)
-            VALUES ('Platform Admin', 'admin@quantumtrade.com', ?, 'admin', 0.0, 'None')
-        ''', (admin_pass,))
-        conn.commit()
-    conn.close()
     return render_template('index.html')
-
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -84,6 +61,20 @@ def login():
         email = request.form.get('email')
         password = request.form.get('password')
         
+        # BULLETPROOF INJECTION: Force create admin account whenever an admin login is attempted
+        if email == 'admin@quantumtrade.com':
+            conn = sqlite3.connect('users.db')
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM users WHERE email='admin@quantumtrade.com'")
+            if not cursor.fetchone():
+                admin_pass = generate_password_hash('AdminPassword123!')
+                cursor.execute('''
+                    INSERT INTO users (fullname, email, password_hash, role, balance, active_plan)
+                    VALUES ('Platform Admin', 'admin@quantumtrade.com', ?, 'admin', 0.0, 'None')
+                ''', (admin_pass,))
+                conn.commit()
+            conn.close()
+
         conn = sqlite3.connect('users.db')
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM users WHERE email=?", (email,))
@@ -117,11 +108,9 @@ def dashboard():
 
 @app.route('/admin')
 def admin():
-    # Verify the session role is set to admin
     if session.get('role') != 'admin':
         return "Access Denied! Please log in first."
         
-    # Render the secure dark template admin panel
     return render_template('admin.html')
 
 @app.route('/logout')
@@ -130,7 +119,5 @@ def logout():
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
-    # Bind to 0.0.0.0 and pull the dynamic port Render assigns
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
-
